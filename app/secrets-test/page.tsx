@@ -150,6 +150,9 @@ export default async function SecretsTestPage() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'monospace' }}>
       <h1>Pantheon Secrets Test</h1>
+      <div style={{ padding: '0.5rem', background: '#ffeb3b', borderRadius: '4px', marginBottom: '1rem' }}>
+        <strong>Code Version:</strong> v3.0 - 2026-01-06 21:30 - With override resolution
+      </div>
 
       <section style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
         <h2>Environment Info</h2>
