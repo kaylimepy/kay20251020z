@@ -3,7 +3,7 @@ export async function GET() {
 
   const environment = process.env.PANTHEON_ENVIRONMENT || 'unknown';
 
-  let secrets: Record<string, any> = {};
+  let secrets: Record<string, unknown> = {};
   let sourceUsed = 'none';
   let rawData = '';
 

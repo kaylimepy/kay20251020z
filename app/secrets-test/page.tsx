@@ -1,7 +1,7 @@
 export default async function SecretsTestPage() {
   let diagnosticData = null;
   let secretsData = null;
-  let errors = { diagnostic: null as string | null, secrets: null as string | null };
+  const errors = { diagnostic: null as string | null, secrets: null as string | null };
 
   try {
     const diagRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/secrets-diagnostic`, {
@@ -46,7 +46,7 @@ export default async function SecretsTestPage() {
       </section>
 
       <section style={{ marginTop: '2rem', padding: '1rem', background: '#e3f2fd', borderRadius: '8px' }}>
-        <h2>Karla's Test Secrets</h2>
+        <h2>Karla&apos;s Test Secrets</h2>
         {errors.secrets ? (
           <p style={{ color: 'red' }}>Error: {errors.secrets}</p>
         ) : (

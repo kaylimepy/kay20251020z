@@ -8,7 +8,7 @@ export async function GET() {
 
   let parsedDefault = null;
   let parsedProduction = null;
-  let parseErrors = {
+  const parseErrors = {
     default: null as string | null,
     production: null as string | null,
   };
