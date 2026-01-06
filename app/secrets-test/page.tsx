@@ -8,7 +8,11 @@ function getDiagnosticData() {
     SITE_SECRETS_DEFAULT: process.env.SITE_SECRETS_DEFAULT || 'not set',
     SITE_SECRETS_PRODUCTION: process.env.SITE_SECRETS_PRODUCTION || 'not set',
     PANTHEON_ENVIRONMENT: process.env.PANTHEON_ENVIRONMENT || 'not set',
+    PANTHEON_ENV: process.env.PANTHEON_ENV || 'not set',
+    ENV: process.env.ENV || 'not set',
+    ENVIRONMENT: process.env.ENVIRONMENT || 'not set',
     NODE_ENV: process.env.NODE_ENV || 'not set',
+    VERCEL_ENV: process.env.VERCEL_ENV || 'not set',
   };
 
   let parsedDefault = null;
@@ -37,7 +41,11 @@ function getDiagnosticData() {
   return {
     environment: {
       pantheon: envVars.PANTHEON_ENVIRONMENT,
+      pantheonEnv: envVars.PANTHEON_ENV,
+      env: envVars.ENV,
+      environment: envVars.ENVIRONMENT,
       node: envVars.NODE_ENV,
+      vercel: envVars.VERCEL_ENV,
     },
     rawEnvVars: {
       SITE_SECRETS_DEFAULT: envVars.SITE_SECRETS_DEFAULT.substring(0, 100) + (envVars.SITE_SECRETS_DEFAULT.length > 100 ? '...' : ''),
@@ -53,7 +61,7 @@ function getDiagnosticData() {
 
 function getSecretsData() {
   const secretNames = ['KARLAS_TEST_1', 'KARLAS_TEST_2', 'KARLAS_TEST_3'];
-  const environment = process.env.PANTHEON_ENVIRONMENT || 'unknown';
+  const environment = process.env.PANTHEON_ENVIRONMENT || process.env.PANTHEON_ENV || process.env.ENV || process.env.ENVIRONMENT || 'unknown';
 
   let secrets: Record<string, SecretObject> = {};
   let sourceUsed = 'none';
@@ -79,14 +87,41 @@ function getSecretsData() {
     };
   }
 
-  const results = secretNames.map(name => ({
-    name,
-    value: secrets[name]?.value || 'not found',
-    fullObject: secrets[name] || null,
-  }));
+  const results = secretNames.map(name => {
+    const secret = secrets[name];
+    if (!secret) {
+      return {
+        name,
+        baseValue: 'not found',
+        resolvedValue: 'not found',
+        hasOverride: false,
+        fullObject: null,
+      };
+    }
+
+    const baseValue = secret.value as string || 'not found';
+    const envValues = (secret as { envValues?: Record<string, string> }).envValues;
+    const overrideValue = envValues?.[environment];
+    const resolvedValue = overrideValue || baseValue;
+
+    return {
+      name,
+      baseValue,
+      overrideValue: overrideValue || 'none',
+      resolvedValue,
+      hasOverride: !!overrideValue,
+      fullObject: secret,
+    };
+  });
 
   return {
     environment,
+    detectedEnvVars: {
+      PANTHEON_ENVIRONMENT: process.env.PANTHEON_ENVIRONMENT || 'not set',
+      PANTHEON_ENV: process.env.PANTHEON_ENV || 'not set',
+      ENV: process.env.ENV || 'not set',
+      ENVIRONMENT: process.env.ENVIRONMENT || 'not set',
+    },
     sourceUsed,
     rawDataPreview: rawData,
     secretsFound: Object.keys(secrets).length,
