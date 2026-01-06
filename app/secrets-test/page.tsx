@@ -1,22 +1,113 @@
+interface SecretObject {
+  value?: string;
+  [key: string]: unknown;
+}
+
+function getDiagnosticData() {
+  const envVars = {
+    SITE_SECRETS_DEFAULT: process.env.SITE_SECRETS_DEFAULT || 'not set',
+    SITE_SECRETS_PRODUCTION: process.env.SITE_SECRETS_PRODUCTION || 'not set',
+    PANTHEON_ENVIRONMENT: process.env.PANTHEON_ENVIRONMENT || 'not set',
+    NODE_ENV: process.env.NODE_ENV || 'not set',
+  };
+
+  let parsedDefault = null;
+  let parsedProduction = null;
+  const parseErrors = {
+    default: null as string | null,
+    production: null as string | null,
+  };
+
+  try {
+    if (envVars.SITE_SECRETS_DEFAULT !== 'not set') {
+      parsedDefault = JSON.parse(envVars.SITE_SECRETS_DEFAULT);
+    }
+  } catch (error) {
+    parseErrors.default = error instanceof Error ? error.message : 'Unknown error';
+  }
+
+  try {
+    if (envVars.SITE_SECRETS_PRODUCTION !== 'not set') {
+      parsedProduction = JSON.parse(envVars.SITE_SECRETS_PRODUCTION);
+    }
+  } catch (error) {
+    parseErrors.production = error instanceof Error ? error.message : 'Unknown error';
+  }
+
+  return {
+    environment: {
+      pantheon: envVars.PANTHEON_ENVIRONMENT,
+      node: envVars.NODE_ENV,
+    },
+    rawEnvVars: {
+      SITE_SECRETS_DEFAULT: envVars.SITE_SECRETS_DEFAULT.substring(0, 100) + (envVars.SITE_SECRETS_DEFAULT.length > 100 ? '...' : ''),
+      SITE_SECRETS_PRODUCTION: envVars.SITE_SECRETS_PRODUCTION.substring(0, 100) + (envVars.SITE_SECRETS_PRODUCTION.length > 100 ? '...' : ''),
+    },
+    parsedSecrets: {
+      default: parsedDefault,
+      production: parsedProduction,
+    },
+    parseErrors,
+  };
+}
+
+function getSecretsData() {
+  const secretNames = ['KARLAS_TEST_1', 'KARLAS_TEST_2', 'KARLAS_TEST_3'];
+  const environment = process.env.PANTHEON_ENVIRONMENT || 'unknown';
+
+  let secrets: Record<string, SecretObject> = {};
+  let sourceUsed = 'none';
+  let rawData = '';
+
+  try {
+    if (process.env.SITE_SECRETS_DEFAULT) {
+      const parsed = JSON.parse(process.env.SITE_SECRETS_DEFAULT);
+      secrets = parsed;
+      sourceUsed = 'SITE_SECRETS_DEFAULT';
+      rawData = process.env.SITE_SECRETS_DEFAULT.substring(0, 200);
+    } else if (process.env.SITE_SECRETS_PRODUCTION) {
+      const parsed = JSON.parse(process.env.SITE_SECRETS_PRODUCTION);
+      secrets = parsed;
+      sourceUsed = 'SITE_SECRETS_PRODUCTION';
+      rawData = process.env.SITE_SECRETS_PRODUCTION.substring(0, 200);
+    }
+  } catch (error) {
+    return {
+      error: 'Failed to parse secrets',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      environment,
+    };
+  }
+
+  const results = secretNames.map(name => ({
+    name,
+    value: secrets[name]?.value || 'not found',
+    fullObject: secrets[name] || null,
+  }));
+
+  return {
+    environment,
+    sourceUsed,
+    rawDataPreview: rawData,
+    secretsFound: Object.keys(secrets).length,
+    requestedSecrets: results,
+    allAvailableSecrets: Object.keys(secrets),
+  };
+}
+
 export default async function SecretsTestPage() {
   let diagnosticData = null;
   let secretsData = null;
   const errors = { diagnostic: null as string | null, secrets: null as string | null };
 
   try {
-    const diagRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/secrets-diagnostic`, {
-      cache: 'no-store',
-    });
-    diagnosticData = await diagRes.json();
+    diagnosticData = getDiagnosticData();
   } catch (error) {
     errors.diagnostic = error instanceof Error ? error.message : 'Unknown error';
   }
 
   try {
-    const secretsRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/test-karlas-secrets`, {
-      cache: 'no-store',
-    });
-    secretsData = await secretsRes.json();
+    secretsData = getSecretsData();
   } catch (error) {
     errors.secrets = error instanceof Error ? error.message : 'Unknown error';
   }
