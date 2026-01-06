@@ -1,9 +1,14 @@
+interface SecretObject {
+  value?: string;
+  [key: string]: unknown;
+}
+
 export async function GET() {
   const secretNames = ['KARLAS_TEST_1', 'KARLAS_TEST_2', 'KARLAS_TEST_3'];
 
   const environment = process.env.PANTHEON_ENVIRONMENT || 'unknown';
 
-  let secrets: Record<string, unknown> = {};
+  let secrets: Record<string, SecretObject> = {};
   let sourceUsed = 'none';
   let rawData = '';
 
