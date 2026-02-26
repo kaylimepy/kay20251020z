@@ -28,3 +28,4 @@ To learn more about Next.js, take a look at the following resources:
 ## Testing DEVX-6609
 Testing runtime secrets parsing.
 
+# Test DEVX-6609 with env-type secret
